@@ -1,0 +1,10 @@
+# Render Blueprint：在 Render 選 New > Blueprint 並連到此 repo 即可一鍵部署
+services:
+  - type: web
+    name: time-war
+    runtime: node
+    plan: free            # 活動當天建議改成 starter，避免休眠
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /healthz
+    autoDeployTrigger: commit

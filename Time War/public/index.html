@@ -1,0 +1,142 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>鐘點戰</title>
+<meta name="theme-color" content="#02100d">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="鐘點戰">
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="icon" href="/icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="grain"></div>
+<div id="conn" class="conn hidden">連線中斷，重新連線中…</div>
+
+<!-- 1. 加入 -->
+<section id="screen-join" class="screen">
+  <div class="title-block">
+    <div class="eyebrow">TIME IS LIFE</div>
+    <h1>鐘點戰</h1>
+    <p class="sub">每個人都有倒數的時間。時間歸零，你就出局。</p>
+  </div>
+  <form id="join-form" class="panel narrow">
+    <label for="name">你的名字</label>
+    <input id="name" maxlength="12" autocomplete="off" placeholder="輸入暱稱">
+    <button class="btn primary" type="submit">進入遊戲</button>
+  </form>
+</section>
+
+<!-- 2. 等候室 -->
+<section id="screen-lobby" class="screen hidden">
+  <div class="title-block small">
+    <div class="eyebrow">WAITING ROOM</div>
+    <h1>鐘點戰</h1>
+  </div>
+  <div id="lobby-notice" class="notice hidden"></div>
+  <div class="panel narrow">
+    <div class="panel-head"><span>房間玩家</span><span id="lobby-count" class="dim"></span></div>
+    <ul id="player-list" class="players"></ul>
+    <div id="lobby-actions">
+      <button id="btn-start" class="btn primary hidden">遊戲開始</button>
+      <p id="lobby-wait" class="dim center"></p>
+      <button id="btn-host-panel" class="btn ghost hidden">⚙ 隱藏卡片設定</button>
+    </div>
+  </div>
+</section>
+
+<!-- 3. 遊戲中 -->
+<section id="screen-game" class="screen hidden">
+  <div class="topbar">
+    <div><span class="dim">玩家</span> <b id="me-name"></b></div>
+    <div><span class="dim">存活</span> <b id="alive"></b></div>
+    <button id="btn-host-panel2" class="btn mini ghost hidden">⚙ 卡片</button>
+  </div>
+
+  <div class="clock-wrap" id="clock-wrap">
+    <div class="clock-label">REMAINING</div>
+    <div id="clock" class="clock" aria-live="off"></div>
+    <div class="clock-sub dim">初始時間 <span id="initial"></span></div>
+    <div id="float" class="float"></div>
+  </div>
+
+  <div class="actions">
+    <div class="panel">
+      <label for="code">輸入四位數密碼</label>
+      <div class="code-row">
+        <input id="code" inputmode="numeric" pattern="\d*" maxlength="4" autocomplete="off" placeholder="0000">
+        <button id="btn-redeem" class="btn primary">確認</button>
+      </div>
+      <p id="lock-msg" class="warn-text hidden"></p>
+    </div>
+    <button id="btn-share" class="btn ghost wide">⇄ 分享時間給隊友</button>
+  </div>
+
+  <ul id="log" class="log"></ul>
+</section>
+
+<!-- 4. 結束畫面 -->
+<section id="screen-over" class="screen over hidden">
+  <div id="over-title" class="over-title"></div>
+  <div id="over-sub" class="over-sub"></div>
+  <button id="btn-restart" class="btn primary">重新啟動遊戲</button>
+</section>
+
+<!-- 倒數 -->
+<div id="countdown" class="countdown hidden"><div id="cd-num"></div><div class="cd-sub">你的時間</div><div id="cd-time"></div></div>
+
+<!-- 分享 Modal -->
+<div id="modal-share" class="modal hidden">
+  <div class="modal-card">
+    <h2>分享時間</h2>
+    <p class="dim">輸入要分享的時間，確認後會立刻從你的時間扣除，並產生一組四碼密碼給隊友輸入。</p>
+    <div id="share-form">
+      <div class="time-inputs">
+        <label>分 <input id="share-min" type="number" min="0" max="60" value="1" inputmode="numeric"></label>
+        <label>秒 <input id="share-sec" type="number" min="0" max="59" value="0" inputmode="numeric"></label>
+      </div>
+      <div class="chips" id="share-chips">
+        <button data-s="30">30秒</button><button data-s="60">1分</button><button data-s="180">3分</button><button data-s="300">5分</button>
+      </div>
+      <div class="row">
+        <button id="share-cancel" class="btn ghost">取消</button>
+        <button id="share-confirm" class="btn primary">確認分享</button>
+      </div>
+    </div>
+    <div id="share-result" class="hidden">
+      <p class="dim center">把這組密碼告訴你的隊友（只能使用一次）</p>
+      <div id="share-code" class="big-code"></div>
+      <button id="share-done" class="btn primary wide">完成</button>
+    </div>
+    <div id="my-shares" class="my-shares"></div>
+  </div>
+</div>
+
+<!-- 房主卡片設定 -->
+<div id="modal-host" class="modal hidden">
+  <div class="modal-card wide-card">
+    <div class="panel-head"><h2>隱藏卡片設定</h2><button id="host-close" class="btn mini ghost">關閉</button></div>
+    <p class="dim">每張卡片有一組隨機四位數密碼。把密碼寫在卡片上藏起來，玩家找到後輸入即可增減時間（負數 = 懲罰）。每組密碼只能使用一次，每局開始時會自動重置。</p>
+    <div class="add-row">
+      <label>分鐘 <input id="card-min" type="number" step="0.5" value="3" inputmode="decimal"></label>
+      <label>張數 <input id="card-count" type="number" min="1" max="50" value="1" inputmode="numeric"></label>
+      <button id="card-add" class="btn primary">＋ 新增</button>
+    </div>
+    <div class="chips" id="card-chips">
+      <button data-m="5">+5</button><button data-m="3">+3</button><button data-m="1">+1</button>
+      <button data-m="-1" class="neg">−1</button><button data-m="-3" class="neg">−3</button><button data-m="-5" class="neg">−5</button>
+    </div>
+    <div id="card-list" class="card-list"></div>
+    <button id="card-regen" class="btn ghost wide">🔀 重新產生所有未使用的密碼</button>
+  </div>
+</div>
+
+<div id="toasts" class="toasts"></div>
+<script src="app.js"></script>
+</body>
+</html>

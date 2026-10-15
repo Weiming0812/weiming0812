@@ -1,0 +1,16 @@
+{
+  "name": "time-war",
+  "version": "1.0.0",
+  "description": "鐘點戰 - 多人同時連線的時間生存遊戲",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "ws": "^8.18.0"
+  },
+  "license": "MIT",
+  "engines": {
+    "node": ">=18"
+  }
+}
